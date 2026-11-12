@@ -26,7 +26,9 @@
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; cursor: pointer; text-align: left; padding: 0; transition: border-color .15s; }
   .card:hover, .card:focus-visible { border-color: var(--accent); outline: none; }
-  .card img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; background: var(--line); }
+  .card img, .nophoto { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; background: var(--line); }
+  .nophoto { display: grid; place-items: center; color: var(--muted); font-size: .85rem; background: linear-gradient(135deg, #15212c, #0f171f); }
+  .nophoto svg { width: 42px; height: 42px; opacity: .5; display: block; margin: 0 auto .4rem; }
   .card .body { padding: .8rem .9rem 1rem; display: grid; gap: .25rem; }
   .price { font-size: 1.25rem; font-weight: 700; }
   .facts { color: var(--muted); font-size: .9rem; }
@@ -146,10 +148,16 @@
     for (const r of current) {
       const card = el("button", "card");
       card.type = "button";
-      const img = el("img");
-      img.loading = "lazy";
-      img.alt = r.UnparsedAddress || "Listing photo";
-      if (r.Photos[0]) img.src = r.Photos[0];
+      let img;
+      if (r.Photos[0]) {
+        img = el("img");
+        img.loading = "lazy";
+        img.alt = r.UnparsedAddress || "Listing photo";
+        img.addEventListener("error", () => img.replaceWith(noPhoto()), { once: true });
+        img.src = r.Photos[0];
+      } else {
+        img = noPhoto();
+      }
       const body = el("div", "body");
       body.append(el("div", "price", money(r.ListPrice)), el("div", "facts", facts(r)), el("div", "addr", r.UnparsedAddress || [r.City, r.StateOrProvince].filter(Boolean).join(", ")));
       card.append(img, body);
@@ -162,10 +170,20 @@
     next.disabled = page >= pages;
   }
 
+  function noPhoto() {
+    const d = el("div", "nophoto");
+    d.innerHTML = '<div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 10.5 12 3l9 7.5V21H3z"/><path d="M9 21v-6h6v6"/></svg>Photo unavailable</div>';
+    return d;
+  }
+
   function openDetail(r) {
     detailBody.replaceChildren();
     const gallery = el("div", "gallery");
-    for (const src of r.Photos) { const i = el("img"); i.src = src; i.alt = ""; i.loading = "lazy"; gallery.append(i); }
+    for (const src of r.Photos) {
+      const i = el("img"); i.alt = ""; i.loading = "lazy";
+      i.addEventListener("error", () => i.remove(), { once: true });
+      i.src = src; gallery.append(i);
+    }
     const extra = [
       r.PropertySubType || r.PropertyType,
       r.YearBuilt ? "Built " + r.YearBuilt : null,
