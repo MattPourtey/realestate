@@ -1,7 +1,11 @@
 {
   "name": "realestate",
+  "main": "src/worker.js",
   "compatibility_date": "2026-11-01",
   "assets": {
-    "directory": "./public"
+    "directory": "./public",
+    "binding": "ASSETS"
   }
+  // Secret (set in Cloudflare dashboard, never in this file):
+  //   BRIDGE_SERVER_TOKEN  -> Bridge "Server Token"
 }
