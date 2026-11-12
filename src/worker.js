@@ -71,16 +71,32 @@ export function isTestDataset(ds) {
   return ds === "test" || ds.startsWith("test_");
 }
 
-// Same listing always gets the same photos.
-export function stockPhotos(key) {
+export function stockStart(key) {
   let h = 0;
   for (const c of String(key)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return h % STOCK_PHOTO_IDS.length;
+}
+
+// start = index of the lead photo. Lists pick unique starts so neighbors
+// don't repeat; the card passes its start to the detail page (?p=) so the
+// same photos show there.
+export function stockPhotos(start) {
   const out = [];
   for (let i = 0; i < STOCK_PER_LISTING; i++) {
-    const id = STOCK_PHOTO_IDS[(h + i * 7) % STOCK_PHOTO_IDS.length];
+    const id = STOCK_PHOTO_IDS[(start + i * 5) % STOCK_PHOTO_IDS.length];
     out.push(`https://images.unsplash.com/${id}?auto=format&fit=crop&w=1200&q=70`);
   }
   return out;
+}
+
+function assignUniqueStarts(records) {
+  const used = new Set();
+  return records.map((r) => {
+    let s = stockStart(r.ListingKey);
+    for (let n = 0; used.has(s) && n < STOCK_PHOTO_IDS.length; n++) s = (s + 1) % STOCK_PHOTO_IDS.length;
+    used.add(s);
+    return s;
+  });
 }
 
 // Browse categories. The homepage only shows ones with a live count above 0,
@@ -125,12 +141,14 @@ export default {
         const q = parseSearch(url.searchParams);
         if (q.error) return json({ error: q.error }, 400);
         const data = await bridge(env, ctx, buildSearchUrl(q));
+        const records = data.value || [];
+        const starts = isTestDataset(q.dataset) ? assignUniqueStarts(records) : [];
         return json({
           dataset: q.dataset,
           page: q.page,
           pageSize: q.top,
           total: data["@odata.count"] ?? null,
-          results: (data.value || []).map((r) => clean(r, q.dataset)),
+          results: records.map((r, i) => clean(r, q.dataset, starts[i])),
         });
       }
 
@@ -159,7 +177,9 @@ export default {
         const target = new URL(`${BRIDGE_BASE}/${dataset}/Property('${one[1]}')`);
         target.searchParams.set("$select", PUBLIC_FIELDS.join(","));
         const data = await bridge(env, ctx, target);
-        return json(clean(data, dataset));
+        const p = url.searchParams.get("p");
+        const start = p !== null && /^\d{1,2}$/.test(p) && Number(p) < STOCK_PHOTO_IDS.length ? Number(p) : undefined;
+        return json(clean(data, dataset, start));
       }
 
       return json({ error: "Not found" }, 404);
@@ -299,15 +319,17 @@ async function bridge(env, ctx, target) {
 
 // ---------- response shaping ----------
 
-export function clean(rec, dataset = "") {
+export function clean(rec, dataset = "", start) {
   const out = {};
   for (const f of PUBLIC_FIELDS) {
     if (f === "Media") continue;
     out[f] = rec[f] ?? null;
   }
   if (isTestDataset(dataset)) {
-    out.Photos = stockPhotos(rec.ListingKey);
+    const s = start ?? stockStart(rec.ListingKey);
+    out.Photos = stockPhotos(s);
     out.StockPhotos = true;
+    out.StockStart = s;
     return out;
   }
   out.StockPhotos = false;

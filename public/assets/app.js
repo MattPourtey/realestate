@@ -12,7 +12,7 @@ export const CATEGORY_PHOTOS = {
   condos: unsplash("photo-1600596542815-ffad4c1539a9", 900),
   apartments: unsplash("photo-1624204386084-dd8c05e32226", 900),
   townhomes: unsplash("photo-1592595896616-c37162298647", 900),
-  luxury: unsplash("photo-1512917774080-9991f1c4c750", 900),
+  luxury: unsplash("photo-1564013799919-ab600027ffc6", 900),
   multifamily: unsplash("photo-1598228723793-52759bba239c", 900),
   rentals: unsplash("photo-1584738766473-61c083514bf4", 900),
   commercial: unsplash("photo-1621831337128-35676ca30868", 900),
@@ -36,8 +36,9 @@ export const api = {
     for (const [k, v] of [...p]) if (v === "" || v == null) p.delete(k);
     return getJSON("/api/listings?" + p);
   },
-  listing(key, dataset = DEFAULT_DATASET) {
-    return getJSON(`/api/listings/${encodeURIComponent(key)}?dataset=${encodeURIComponent(dataset)}`);
+  listing(key, dataset = DEFAULT_DATASET, photoStart = null) {
+    const p = photoStart != null && /^\d{1,2}$/.test(String(photoStart)) ? `&p=${photoStart}` : "";
+    return getJSON(`/api/listings/${encodeURIComponent(key)}?dataset=${encodeURIComponent(dataset)}${p}`);
   },
   categories(dataset = DEFAULT_DATASET) {
     return getJSON("/api/categories?dataset=" + encodeURIComponent(dataset));
@@ -61,7 +62,8 @@ export function isNew(r, days = 14) {
 export const typeLabel = (r) => r.PropertySubType || r.PropertyType || "Property";
 export const addressLine = (r) => r.UnparsedAddress || [r.City, r.StateOrProvince].filter(Boolean).join(", ");
 export const listingHref = (r, dataset = DEFAULT_DATASET) =>
-  `/listing/?key=${encodeURIComponent(r.ListingKey)}&dataset=${encodeURIComponent(dataset)}`;
+  `/listing/?key=${encodeURIComponent(r.ListingKey)}&dataset=${encodeURIComponent(dataset)}` +
+  (r.StockPhotos && r.StockStart != null ? `&p=${r.StockStart}` : "");
 
 export function el(tag, attrs = {}, ...children) {
   const e = document.createElement(tag);
@@ -84,10 +86,10 @@ export const saved = {
     try { return JSON.parse(localStorage.getItem(SAVE_KEY) || "[]"); } catch { return []; }
   },
   has(key) { return this.all().some((s) => s.key === key); },
-  toggle(key, dataset = DEFAULT_DATASET) {
+  toggle(key, dataset = DEFAULT_DATASET, p = null) {
     let list = this.all();
     const on = !list.some((s) => s.key === key);
-    list = on ? [...list, { key, dataset }] : list.filter((s) => s.key !== key);
+    list = on ? [...list, { key, dataset, p }] : list.filter((s) => s.key !== key);
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(list.slice(-100))); } catch { /* storage blocked */ }
     updateSavedCount();
     return on;
@@ -108,7 +110,7 @@ export function saveButton(r, dataset = DEFAULT_DATASET) {
   b.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
-    saved.toggle(r.ListingKey, dataset);
+    saved.toggle(r.ListingKey, dataset, r.StockStart ?? null);
     sync();
   });
   return b;

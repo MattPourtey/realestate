@@ -145,7 +145,7 @@
       return;
     }
     skeletonCards(grid, Math.min(list.length, 6), 330);
-    const results = await Promise.allSettled(list.map((s) => api.listing(s.key, s.dataset)));
+    const results = await Promise.allSettled(list.map((s) => api.listing(s.key, s.dataset, s.p)));
     const ok = results.map((r, i) => r.status === "fulfilled" ? listingCard(r.value, { dataset: list[i].dataset }) : null).filter(Boolean);
     const gone = results.length - ok.length;
     status.textContent = `${ok.length} saved` + (gone ? `, ${gone} no longer available` : "");

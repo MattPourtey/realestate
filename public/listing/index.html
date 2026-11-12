@@ -75,7 +75,7 @@
       el("p", { text: msg }), el("a", { class: "btn btn-primary", href: "/listings/", text: "Browse homes" })));
 
   if (!key) fail("This link is missing a listing. Pick a home from the listings page.");
-  else api.listing(key, dataset).then(render).catch((e) => fail(e.message === "Listing not found" ? "This home is no longer listed." : "This listing couldn't load: " + e.message));
+  else api.listing(key, dataset, q.get("p")).then(render).catch((e) => fail(e.message === "Listing not found" ? "This home is no longer listed." : "This listing couldn't load: " + e.message));
 
   function render(r) {
     const addr = addressLine(r);
@@ -113,7 +113,7 @@
 
     const saveBtn = el("button", { class: "btn btn-ghost save-wide", type: "button" });
     const syncSave = () => { const on = saved.has(r.ListingKey); saveBtn.setAttribute("aria-pressed", String(on)); saveBtn.textContent = on ? "Saved" : "Save this home"; };
-    saveBtn.addEventListener("click", () => { saved.toggle(r.ListingKey, dataset); syncSave(); });
+    saveBtn.addEventListener("click", () => { saved.toggle(r.ListingKey, dataset, r.StockStart ?? null); syncSave(); });
     syncSave();
 
     const side = el("aside", { class: "side" },
