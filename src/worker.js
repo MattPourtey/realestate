@@ -49,6 +49,39 @@ const SORTS = {
   price_desc: "ListPrice desc",
 };
 
+// Bridge's test-data photo host returns 403, so test listings get free
+// Unsplash house photos instead (Unsplash License; hotlinked as Unsplash asks).
+// Real MLS datasets are never touched by this.
+const STOCK_PHOTO_IDS = [
+  "photo-1570129477492-45c003edd2be", "photo-1600596542815-ffad4c1539a9",
+  "photo-1781797221329-c3d083ab6d99", "photo-1598228723793-52759bba239c",
+  "photo-1580587771525-78b9dba3b914", "photo-1787094497609-5efe6029b950",
+  "photo-1568605114967-8130f3a36994", "photo-1583608205776-bfd35f0d9f83",
+  "photo-1777428762767-e3a797da389a", "photo-1628624747186-a941c476b7ef",
+  "photo-1512917774080-9991f1c4c750", "photo-1786550860372-116b871a1697",
+  "photo-1605276374104-dee2a0ed3cd6", "photo-1592595896616-c37162298647",
+  "photo-1758158452965-ef267a639880", "photo-1605146769289-440113cc3d00",
+  "photo-1494526585095-c41746248156", "photo-1584738766473-61c083514bf4",
+  "photo-1564013799919-ab600027ffc6",
+];
+const STOCK_PER_LISTING = 4;
+
+export function isTestDataset(ds) {
+  return ds === "test" || ds.startsWith("test_");
+}
+
+// Same listing always gets the same photos.
+export function stockPhotos(key) {
+  let h = 0;
+  for (const c of String(key)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const out = [];
+  for (let i = 0; i < STOCK_PER_LISTING; i++) {
+    const id = STOCK_PHOTO_IDS[(h + i * 7) % STOCK_PHOTO_IDS.length];
+    out.push(`https://images.unsplash.com/${id}?auto=format&fit=crop&w=1200&q=70`);
+  }
+  return out;
+}
+
 const MAX_PAGE = 24;
 const CACHE_SECONDS = 300;
 
@@ -80,7 +113,7 @@ export default {
           page: q.page,
           pageSize: q.top,
           total: data["@odata.count"] ?? null,
-          results: (data.value || []).map(clean),
+          results: (data.value || []).map((r) => clean(r, q.dataset)),
         });
       }
 
@@ -91,7 +124,7 @@ export default {
         const target = new URL(`${BRIDGE_BASE}/${dataset}/Property('${one[1]}')`);
         target.searchParams.set("$select", PUBLIC_FIELDS.join(","));
         const data = await bridge(env, ctx, target);
-        return json(clean(data));
+        return json(clean(data, dataset));
       }
 
       return json({ error: "Not found" }, 404);
@@ -215,12 +248,18 @@ async function bridge(env, ctx, target) {
 
 // ---------- response shaping ----------
 
-export function clean(rec) {
+export function clean(rec, dataset = "") {
   const out = {};
   for (const f of PUBLIC_FIELDS) {
     if (f === "Media") continue;
     out[f] = rec[f] ?? null;
   }
+  if (isTestDataset(dataset)) {
+    out.Photos = stockPhotos(rec.ListingKey);
+    out.StockPhotos = true;
+    return out;
+  }
+  out.StockPhotos = false;
   out.Photos = (rec.Media || [])
     .filter((m) => m && m.MediaURL && (!m.MediaCategory || m.MediaCategory === "Photo"))
     .sort((a, b) => (a.Order ?? 0) - (b.Order ?? 0))

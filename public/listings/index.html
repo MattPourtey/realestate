@@ -27,6 +27,9 @@
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; cursor: pointer; text-align: left; padding: 0; transition: border-color .15s; }
   .card:hover, .card:focus-visible { border-color: var(--accent); outline: none; }
   .card img, .nophoto { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; background: var(--line); }
+  .photo { position: relative; }
+  .badge { position: absolute; top: .5rem; left: .5rem; background: rgba(10,16,21,.8); color: var(--muted); font-size: .7rem; padding: .15rem .45rem; border-radius: 4px; letter-spacing: .03em; }
+  footer { text-align: center; color: var(--muted); font-size: .8rem; padding: 0 1.5rem 2rem; }
   .nophoto { display: grid; place-items: center; color: var(--muted); font-size: .85rem; background: linear-gradient(135deg, #15212c, #0f171f); }
   .nophoto svg { width: 42px; height: 42px; opacity: .5; display: block; margin: 0 auto .4rem; }
   .card .body { padding: .8rem .9rem 1rem; display: grid; gap: .25rem; }
@@ -88,6 +91,7 @@
       <button id="next" type="button">Next</button>
     </div>
   </main>
+  <footer>Demo listing photos from <a href="https://unsplash.com/?utm_source=realestate_mattpourtey&amp;utm_medium=referral" rel="noopener" target="_blank">Unsplash</a>.</footer>
 
   <dialog id="detail">
     <button class="close" type="button" id="closeDetail">Close</button>
@@ -158,9 +162,12 @@
       } else {
         img = noPhoto();
       }
+      const photo = el("div", "photo");
+      photo.append(img);
+      if (r.StockPhotos) photo.append(el("span", "badge", "Stock photo"));
       const body = el("div", "body");
       body.append(el("div", "price", money(r.ListPrice)), el("div", "facts", facts(r)), el("div", "addr", r.UnparsedAddress || [r.City, r.StateOrProvince].filter(Boolean).join(", ")));
-      card.append(img, body);
+      card.append(photo, body);
       card.addEventListener("click", () => openDetail(r));
       grid.append(card);
     }
