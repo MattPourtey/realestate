@@ -131,6 +131,9 @@ export function parseSearch(params) {
   for (const p of [minPrice, maxPrice, beds, baths, page, pageSize]) {
     if (p.error) return { error: p.error };
   }
+  if (minPrice.value !== null && maxPrice.value !== null && minPrice.value > maxPrice.value) {
+    return { error: "Min price is higher than max price" };
+  }
 
   // City: letters, spaces, periods, apostrophes and hyphens only.
   let city = (params.get("city") || "").trim();
