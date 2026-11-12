@@ -3,22 +3,227 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Real Estate | Matt Pourteymaur</title>
+<title>Matthew Real Estate | Homes for sale</title>
+<meta name="description" content="Search active MLS listings, save the homes you like, and reach out only when you're ready.">
+<link rel="preconnect" href="https://images.unsplash.com">
+<link rel="stylesheet" href="/assets/site.css">
 <style>
-  body { margin: 0; min-height: 100vh; display: grid; place-items: center;
-         background: #0a1015; color: #e6edf3; font-family: system-ui, sans-serif; text-align: center; }
-  h1 { font-size: 2rem; margin: 0 0 .5rem; }
-  p { color: #8b98a5; margin: 0; }
-  .name { color: #22c55e; font-size: 3rem; font-weight: 700; margin: 0 0 .5rem; }
+  /* Hero */
+  .hero { position: relative; min-height: 640px; display: flex; align-items: flex-end; color: #fff; isolation: isolate; }
+  .hero-img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
+  .hero::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(100deg, rgba(14, 26, 30, .82) 0%, rgba(14, 26, 30, .55) 42%, rgba(14, 26, 30, .05) 75%), linear-gradient(0deg, rgba(14, 26, 30, .45), transparent 40%); }
+  .hero .wrap { width: 100%; padding-top: 6rem; padding-bottom: 0; }
+  .hero h1 { font-size: clamp(2.6rem, 6vw, 4.6rem); font-weight: 700; letter-spacing: -.035em; max-width: 13ch; }
+  .hero-sub { font-size: 1.15rem; max-width: 46ch; margin-top: 1.1rem; color: #e3ebe7; }
+  .hero-ctas { margin-top: 1.25rem; display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap; }
+  .hero-ctas a { color: #fff; font-weight: 600; text-underline-offset: 4px; }
+
+  /* Search slab docks across the hero's bottom edge */
+  .search-slab { position: relative; z-index: 5; margin-top: 2.5rem; transform: translateY(50%); background: var(--white); color: var(--ink); border-radius: var(--r-lg); box-shadow: 0 18px 50px rgba(14, 26, 30, .22); padding: 1.25rem; display: grid; grid-template-columns: 1.6fr 1.2fr 1fr 1fr .8fr .8fr auto; gap: .75rem; align-items: end; }
+  .search-slab .btn { height: 46px; padding: 0 1.6rem; }
+  .after-hero { padding-top: 7rem; }
+
+  /* Featured */
+  .featured { grid-template-columns: repeat(3, 1fr); }
+
+  /* Categories mosaic */
+  .cats { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 190px; gap: 1rem; }
+  .cat { position: relative; border-radius: var(--r-lg); overflow: hidden; text-decoration: none; color: #fff; display: flex; align-items: flex-end; padding: 1.1rem 1.2rem; isolation: isolate; background: var(--ink); }
+  .cat img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; transition: transform .6s; }
+  .cat::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgba(14, 26, 30, .78), rgba(14, 26, 30, .05) 65%); }
+  .cat:hover img { transform: scale(1.05); }
+  .cat strong { display: block; font-family: var(--display); font-size: 1.35rem; font-weight: 650; letter-spacing: -.02em; }
+  .cat span { font-size: .9rem; color: #dbe6e1; }
+  .cat.big { grid-column: span 2; grid-row: span 2; }
+  .cat.big strong { font-size: 2rem; }
+  .cat.wide { grid-column: span 2; }
+
+  /* Why */
+  .why { background: var(--juniper-tint); }
+  .why-grid { display: grid; grid-template-columns: 1.1fr 1fr 1fr 1fr; gap: 2.5rem; align-items: start; }
+  .why-grid h3 { font-size: 1.2rem; margin-bottom: .5rem; }
+  .why-grid p { color: #3c4f55; }
+
+  /* Recent */
+  .recent { grid-template-columns: repeat(4, 1fr); }
+
+  /* Closing CTA */
+  .cta { background: var(--juniper); color: #fff; border-radius: var(--r-lg); padding: 3.25rem; display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 2.5rem; align-items: end; }
+  .cta h2 { font-size: clamp(1.9rem, 3.4vw, 2.8rem); max-width: 14ch; }
+  .cta h3 { font-family: var(--body); font-size: 1.05rem; font-weight: 600; letter-spacing: 0; margin-bottom: .4rem; }
+  .cta p { color: #d4e7de; margin-bottom: 1.1rem; }
+
+  @media (max-width: 1000px) {
+    .search-slab { grid-template-columns: 1fr 1fr; transform: none; margin-bottom: 2rem; }
+    .search-slab .btn { grid-column: 1 / -1; }
+    .after-hero { padding-top: 3.5rem; }
+    .featured, .recent { grid-template-columns: repeat(2, 1fr); }
+    .cats { grid-template-columns: repeat(2, 1fr); }
+    .why-grid, .cta { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 620px) {
+    .featured, .recent, .cats { grid-template-columns: 1fr; }
+    .cat.big { grid-column: auto; grid-row: span 1; }
+    .cta { padding: 2rem; }
+  }
 </style>
 </head>
 <body>
-  <main>
-    <div class="name">Matthew</div>
-    <h1>Real Estate</h1>
-    <p>Coming soon.</p>
-    <p style="margin-top:1rem;color:#e6edf3">Anthony is cool</p>
-    <p style="margin-top:1.5rem"><a href="/listings/" style="color:#22c55e">Browse listings &rarr;</a></p>
-  </main>
+<main>
+  <section class="hero" aria-labelledby="hero-title">
+    <img class="hero-img" id="heroImg" alt="Modern white home with a pool at dusk" fetchpriority="high">
+    <div class="wrap">
+      <h1 id="hero-title">Homes for sale, without the sign-up wall.</h1>
+      <p class="hero-sub">Search active MLS listings, save the ones you like, and reach out only when you're ready.</p>
+      <div class="hero-ctas">
+        <a href="/listings/">Browse every listing</a>
+        <a href="#recent">See what's new this week</a>
+      </div>
+
+      <form class="search-slab" id="heroSearch" action="/listings/" role="search" aria-label="Search listings">
+        <div class="field"><label for="f-city">Location</label><input id="f-city" name="city" placeholder="City" maxlength="60" autocomplete="address-level2"></div>
+        <div class="field"><label for="f-type">Property type</label><select id="f-type" name="category"><option value="">Any type</option></select></div>
+        <div class="field"><label for="f-min">Min price</label>
+          <select id="f-min" name="minPrice"><option value="">No min</option><option value="200000">$200K</option><option value="300000">$300K</option><option value="400000">$400K</option><option value="500000">$500K</option><option value="750000">$750K</option><option value="1000000">$1M</option></select></div>
+        <div class="field"><label for="f-max">Max price</label>
+          <select id="f-max" name="maxPrice"><option value="">No max</option><option value="300000">$300K</option><option value="400000">$400K</option><option value="500000">$500K</option><option value="750000">$750K</option><option value="1000000">$1M</option><option value="2000000">$2M</option></select></div>
+        <div class="field"><label for="f-beds">Beds</label>
+          <select id="f-beds" name="beds"><option value="">Any</option><option value="1">1+</option><option value="2">2+</option><option value="3">3+</option><option value="4">4+</option><option value="5">5+</option></select></div>
+        <div class="field"><label for="f-baths">Baths</label>
+          <select id="f-baths" name="baths"><option value="">Any</option><option value="1">1+</option><option value="2">2+</option><option value="3">3+</option><option value="4">4+</option></select></div>
+        <button class="btn btn-primary" type="submit">Search homes</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="section after-hero" aria-labelledby="featured-title">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <h2 id="featured-title">Featured homes</h2>
+          <p>The top of the market right now, ranked by price.</p>
+        </div>
+        <a class="btn btn-ghost" href="/listings/?category=luxury&amp;sort=price_desc">View all luxury</a>
+      </div>
+      <div class="cards featured" id="featured"></div>
+    </div>
+  </section>
+
+  <section class="section" id="categories" aria-labelledby="cats-title" style="padding-top:1rem">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <h2 id="cats-title">Explore by property type</h2>
+          <p>Counts update with the live feed.</p>
+        </div>
+      </div>
+      <div class="cats" id="cats"></div>
+    </div>
+  </section>
+
+  <section class="section why" aria-labelledby="why-title">
+    <div class="wrap why-grid">
+      <h2 id="why-title">Built for browsing, not lead capture.</h2>
+      <div>
+        <h3>Straight from the MLS</h3>
+        <p>Listings come from the same feed agents use and refresh every few minutes, so prices and status stay current.</p>
+      </div>
+      <div>
+        <h3>Save without an account</h3>
+        <p>Tap the heart on any home to keep it. Your saved list stays on this device, and nobody gets your email.</p>
+      </div>
+      <div>
+        <h3>Every detail up front</h3>
+        <p>Price, beds, baths, square footage and photos on every card. No pop-ups asking for your number to see more.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="recent" aria-labelledby="recent-title">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <h2 id="recent-title">Recently listed</h2>
+          <p>The newest homes to hit the market.</p>
+        </div>
+        <a class="btn btn-ghost" href="/listings/?sort=newest">See all new listings</a>
+      </div>
+      <div class="cards recent" id="recentGrid"></div>
+    </div>
+  </section>
+
+  <section class="section" id="sell" aria-labelledby="cta-title" style="padding-top:1rem">
+    <div class="wrap">
+      <div class="cta">
+        <h2 id="cta-title">Start with what's on the market.</h2>
+        <div>
+          <h3>Buying</h3>
+          <p>Filter by price, size and type, then save the homes worth a second look.</p>
+          <a class="btn btn-light" href="/listings/">Browse homes</a>
+        </div>
+        <div>
+          <h3>Selling</h3>
+          <p>See what comparable homes near you are listed for before you set a price.</p>
+          <a class="btn btn-light" href="/listings/?sort=newest">Compare listings</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+  import { api, mountChrome, listingCard, skeletonCards, el, num, CATEGORY_PHOTOS, HERO_PHOTO, DEFAULT_DATASET } from "/assets/app.js";
+
+  mountChrome("home");
+  document.getElementById("heroImg").src = HERO_PHOTO;
+
+  // Hero search: drop empty fields so the listings URL stays clean.
+  const form = document.getElementById("heroSearch");
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const p = new URLSearchParams();
+    for (const [k, v] of new FormData(form)) {
+      let val = String(v).trim();
+      if (k === "city") val = val.replace(/\s+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      if (val) p.set(k, val);
+    }
+    location.href = "/listings/" + (p.toString() ? "?" + p : "");
+  });
+
+  const showError = (container, msg) => container.replaceChildren(el("p", { class: "error", text: msg }));
+
+  // Featured: highest-priced luxury listings.
+  const featured = document.getElementById("featured");
+  skeletonCards(featured, 3, 380);
+  api.listings({ category: "luxury", sort: "price_desc", pageSize: 3 })
+    .then((d) => d.results.length
+      ? featured.replaceChildren(...d.results.map((r) => listingCard(r)))
+      : showError(featured, "No featured homes right now. Check back soon."))
+    .catch((e) => showError(featured, "Featured homes couldn't load: " + e.message));
+
+  // Recently listed.
+  const recent = document.getElementById("recentGrid");
+  skeletonCards(recent, 8, 320);
+  api.listings({ sort: "newest", pageSize: 8 })
+    .then((d) => recent.replaceChildren(...d.results.map((r) => listingCard(r, { showListed: true }))))
+    .catch((e) => showError(recent, "New listings couldn't load: " + e.message));
+
+  // Categories: only those with live listings; also fills the hero type picker.
+  const cats = document.getElementById("cats");
+  skeletonCards(cats, 6, 190);
+  api.categories(DEFAULT_DATASET).then((d) => {
+    const typeSel = document.getElementById("f-type");
+    for (const c of d.categories) typeSel.append(el("option", { value: c.id, text: c.label }));
+    const order = ["houses", "luxury", "condos", "townhomes", "apartments", "multifamily", "rentals", "commercial", "land"];
+    const list = [...d.categories].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+    // First tile is 2x2; widen the last tile if the 4-column grid would leave a hole.
+    const widenLast = (4 + (list.length - 1)) % 4 !== 0;
+    cats.replaceChildren(...list.map((c, i) =>
+      el("a", { class: "cat" + (i === 0 ? " big" : "") + (widenLast && i === list.length - 1 && i !== 0 ? " wide" : ""), href: `/listings/?category=${c.id}` },
+        el("img", { src: CATEGORY_PHOTOS[c.id], alt: "", loading: "lazy" }),
+        el("div", {}, el("strong", { text: c.label }), el("span", { text: `${num(c.count)} listings` })),
+      )));
+  }).catch((e) => showError(cats, "Categories couldn't load: " + e.message));
+</script>
 </body>
 </html>

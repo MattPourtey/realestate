@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Listing | Matthew Real Estate</title>
+<link rel="preconnect" href="https://images.unsplash.com">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .crumbs { padding: 1.25rem 0; font-size: .9rem; color: var(--muted); }
+  .crumbs a { color: var(--juniper); }
+  .gallery { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; gap: .6rem; height: 520px; border-radius: var(--r-lg); overflow: hidden; position: relative; }
+  .gallery button { all: unset; cursor: zoom-in; position: relative; overflow: hidden; background: var(--juniper-tint); }
+  .gallery button:focus-visible { outline: 3px solid var(--juniper); outline-offset: -3px; }
+  .gallery img { width: 100%; height: 100%; object-fit: cover; }
+  .gallery .main { grid-row: span 2; }
+  .gallery .tag-stock { top: auto; bottom: .75rem; right: .75rem; left: auto; }
+  .detail { display: grid; grid-template-columns: 1fr 340px; gap: 3rem; margin: 2rem 0 4rem; align-items: start; }
+  .price { font-family: var(--display); font-size: clamp(2.2rem, 4vw, 3rem); font-weight: 700; letter-spacing: -.03em; }
+  .addr { font-size: 1.15rem; margin-top: .25rem; }
+  .keyfacts { display: flex; gap: 2rem; margin: 1.5rem 0; padding: 1.25rem 0; border-block: 1px solid var(--line); flex-wrap: wrap; }
+  .keyfacts div { display: grid; }
+  .keyfacts b { font-family: var(--display); font-size: 1.5rem; font-weight: 650; }
+  .keyfacts span { color: var(--muted); font-size: .9rem; }
+  .facts-table { display: grid; grid-template-columns: repeat(2, 1fr); gap: .1rem 2rem; margin-top: 1rem; }
+  .facts-table div { display: flex; justify-content: space-between; padding: .65rem 0; border-bottom: 1px solid var(--line); font-size: .95rem; }
+  .facts-table dt { color: var(--muted); }
+  .facts-table dd { margin: 0; font-weight: 500; }
+  .remarks { margin-top: 2rem; }
+  .remarks h2, .facts h2 { font-size: 1.35rem; margin-bottom: .6rem; }
+  .remarks p { max-width: 68ch; color: #34474d; }
+  .side { position: sticky; top: 90px; background: var(--white); border: 1px solid var(--line); border-radius: var(--r-md); padding: 1.4rem; display: grid; gap: .9rem; }
+  .side .status { display: inline-flex; width: fit-content; background: var(--juniper-tint); color: var(--juniper-dark); font-weight: 600; font-size: .85rem; padding: .2rem .65rem; border-radius: 999px; }
+  .side .office { color: var(--muted); font-size: .9rem; }
+  .side .save-wide { justify-content: center; }
+  .side .save-wide[aria-pressed="true"] { border-color: #c2410c; color: #c2410c; }
+  dialog { border: 0; padding: 0; background: rgba(10, 16, 21, .96); width: 100vw; height: 100vh; max-width: none; max-height: none; }
+  dialog img { width: 100%; height: calc(100vh - 80px); object-fit: contain; }
+  .lb-bar { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; color: #fff; }
+  .lb-bar button { background: transparent; border: 1px solid #44575d; color: #fff; border-radius: 999px; height: 40px; padding: 0 1rem; cursor: pointer; font: 500 .9rem var(--body); }
+  .more { padding-bottom: 4rem; }
+  .more .cards { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 900px) {
+    .gallery { grid-template-columns: 1fr; grid-template-rows: auto; height: auto; }
+    .gallery .main { grid-row: auto; aspect-ratio: 4/3; }
+    .gallery button:not(.main) { display: none; }
+    .detail { grid-template-columns: 1fr; }
+    .side { position: static; }
+    .facts-table, .more .cards { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap" id="root">
+  <p class="crumbs"><a href="/listings/">All listings</a></p>
+  <div class="skeleton" style="height:520px;border-radius:18px"></div>
+</main>
+<dialog id="lightbox" aria-label="Photo viewer">
+  <div class="lb-bar"><span id="lbCount"></span><span><button type="button" id="lbPrev">Previous</button> <button type="button" id="lbNext">Next</button> <button type="button" id="lbClose">Close</button></span></div>
+  <img id="lbImg" alt="">
+</dialog>
+
+<script type="module">
+  import { api, mountChrome, listingCard, el, money, num, typeLabel, addressLine, listedDate, saved, DEFAULT_DATASET } from "/assets/app.js";
+
+  mountChrome("buy");
+  const root = document.getElementById("root");
+  const q = new URL(location.href).searchParams;
+  const key = q.get("key");
+  const dataset = q.get("dataset") || DEFAULT_DATASET;
+
+  const fail = (msg) => root.replaceChildren(
+    el("p", { class: "crumbs" }, el("a", { href: "/listings/", text: "All listings" })),
+    el("div", { class: "empty", style: "background:#fff;border:1px dashed var(--line);border-radius:12px;padding:2.5rem;text-align:center;display:grid;gap:.75rem;justify-items:center;margin-bottom:4rem" },
+      el("p", { text: msg }), el("a", { class: "btn btn-primary", href: "/listings/", text: "Browse homes" })));
+
+  if (!key) fail("This link is missing a listing. Pick a home from the listings page.");
+  else api.listing(key, dataset).then(render).catch((e) => fail(e.message === "Listing not found" ? "This home is no longer listed." : "This listing couldn't load: " + e.message));
+
+  function render(r) {
+    const addr = addressLine(r);
+    document.title = `${money(r.ListPrice)}, ${addr} | Matthew Real Estate`;
+    const photos = r.Photos || [];
+
+    // Gallery: one big + two small, click to open full screen.
+    const gallery = el("div", { class: "gallery" });
+    photos.slice(0, 3).forEach((src, i) => {
+      const img = el("img", { src, alt: i === 0 ? addr : "", loading: i ? "lazy" : "eager" });
+      gallery.append(el("button", { class: i === 0 ? "main" : "", type: "button", "aria-label": `Open photo ${i + 1} of ${photos.length}`, onclick: () => openLb(i) }, img));
+    });
+    if (!photos.length) gallery.append(el("div", { class: "main nophoto", text: "Photo unavailable" }));
+    if (r.StockPhotos) gallery.append(el("span", { class: "tag tag-stock", text: "Stock photos" }));
+
+    const keyfacts = el("div", { class: "keyfacts" },
+      r.BedroomsTotal != null && el("div", {}, el("b", { text: r.BedroomsTotal }), el("span", { text: "Beds" })),
+      r.BathroomsTotalInteger != null && el("div", {}, el("b", { text: r.BathroomsTotalInteger }), el("span", { text: "Baths" })),
+      r.LivingArea != null && el("div", {}, el("b", { text: num(r.LivingArea) }), el("span", { text: "Sq ft" })),
+      r.ListPrice && r.LivingArea ? el("div", {}, el("b", { text: "$" + num(Math.round(r.ListPrice / r.LivingArea)) }), el("span", { text: "Per sq ft" })) : null,
+    );
+
+    const listed = listedDate(r);
+    const rows = [
+      ["Property type", typeLabel(r)],
+      ["Status", r.StandardStatus],
+      ["Year built", r.YearBuilt],
+      ["Lot size", r.LotSizeAcres != null ? `${r.LotSizeAcres} acres` : null],
+      ["Days on market", r.DaysOnMarket],
+      ["Listed", listed && listed.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })],
+      ["City", r.City],
+      ["ZIP code", r.PostalCode],
+    ].filter(([, v]) => v != null && v !== "");
+    const facts = el("dl", { class: "facts-table" }, rows.map(([k, v]) => el("div", {}, el("dt", { text: k }), el("dd", { text: String(v) }))));
+
+    const saveBtn = el("button", { class: "btn btn-ghost save-wide", type: "button" });
+    const syncSave = () => { const on = saved.has(r.ListingKey); saveBtn.setAttribute("aria-pressed", String(on)); saveBtn.textContent = on ? "Saved" : "Save this home"; };
+    saveBtn.addEventListener("click", () => { saved.toggle(r.ListingKey, dataset); syncSave(); });
+    syncSave();
+
+    const side = el("aside", { class: "side" },
+      el("span", { class: "status", text: r.StandardStatus || "Listed" }),
+      el("div", { class: "price", style: "font-size:2rem", text: money(r.ListPrice) }),
+      saveBtn,
+      el("a", { class: "btn btn-primary", href: "/listings/", text: "Keep browsing" }),
+      r.ListOfficeName && el("p", { class: "office", text: `Listing courtesy of ${r.ListOfficeName}` }),
+    );
+
+    const more = el("section", { class: "more" }, el("h2", { text: "Similar price range", style: "font-size:1.5rem;margin-bottom:1.25rem" }), el("div", { class: "cards", id: "more" }));
+
+    root.replaceChildren(
+      el("p", { class: "crumbs" }, el("a", { href: "/listings/", text: "All listings" }), ` / ${typeLabel(r)}`),
+      gallery,
+      el("div", { class: "detail" },
+        el("div", {},
+          el("div", { class: "price", text: money(r.ListPrice) }),
+          el("h1", { class: "addr", style: "font-family:var(--body);font-weight:500;letter-spacing:0", text: addr }),
+          keyfacts,
+          r.PublicRemarks && el("div", { class: "remarks" }, el("h2", { text: "About this home" }), el("p", { text: r.PublicRemarks })),
+          el("div", { class: "facts", style: "margin-top:2rem" }, el("h2", { text: "Facts and features" }), facts),
+        ),
+        side,
+      ),
+      more,
+    );
+
+    // Similar: within 20% of this price.
+    if (r.ListPrice) {
+      const lo = Math.round(r.ListPrice * 0.8), hi = Math.round(r.ListPrice * 1.2);
+      api.listings({ dataset, minPrice: lo, maxPrice: hi, pageSize: 4 }).then((d) => {
+        const list = d.results.filter((x) => x.ListingKey !== r.ListingKey).slice(0, 3);
+        list.length ? document.getElementById("more").replaceChildren(...list.map((x) => listingCard(x, { dataset }))) : more.remove();
+      }).catch(() => more.remove());
+    } else more.remove();
+
+    // Lightbox
+    const lb = document.getElementById("lightbox"), lbImg = document.getElementById("lbImg"), lbCount = document.getElementById("lbCount");
+    let idx = 0;
+    const show = () => { lbImg.src = photos[idx]; lbCount.textContent = `${idx + 1} of ${photos.length}`; };
+    function openLb(i) { idx = i; show(); lb.showModal(); }
+    document.getElementById("lbPrev").onclick = () => { idx = (idx - 1 + photos.length) % photos.length; show(); };
+    document.getElementById("lbNext").onclick = () => { idx = (idx + 1) % photos.length; show(); };
+    document.getElementById("lbClose").onclick = () => lb.close();
+    lb.addEventListener("keydown", (e) => { if (e.key === "ArrowRight") document.getElementById("lbNext").click(); if (e.key === "ArrowLeft") document.getElementById("lbPrev").click(); });
+  }
+</script>
+</body>
+</html>

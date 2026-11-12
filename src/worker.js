@@ -35,6 +35,7 @@ const PUBLIC_FIELDS = [
   "LotSizeAcres",
   "YearBuilt",
   "DaysOnMarket",
+  "ListingContractDate",
   "PublicRemarks",
   "Latitude",
   "Longitude",
