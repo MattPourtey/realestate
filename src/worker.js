@@ -82,6 +82,22 @@ export function stockPhotos(key) {
   return out;
 }
 
+// Browse categories. The homepage only shows ones with a live count above 0,
+// so categories appear/disappear with the data. Filters are fixed strings
+// (never built from user input).
+const LUXURY_MIN = 750000; // raise to ~1,000,000+ for real Las Vegas data
+export const CATEGORIES = {
+  houses:       { label: "Houses",       filter: "PropertySubType eq 'Single Family Residence'" },
+  condos:       { label: "Condos",       filter: "PropertySubType eq 'Condominium'" },
+  apartments:   { label: "Apartments",   filter: "PropertySubType eq 'Apartment'" },
+  townhomes:    { label: "Townhomes",    filter: "PropertySubType eq 'Townhouse'" },
+  luxury:       { label: "Luxury",       filter: `PropertyType eq 'Residential' and ListPrice ge ${LUXURY_MIN}` },
+  multifamily:  { label: "Multi-family", filter: "(PropertySubType eq 'Duplex' or PropertySubType eq 'Triplex' or PropertySubType eq 'Quadruplex')" },
+  rentals:      { label: "Rentals",      filter: "PropertyType eq 'Residential Lease'" },
+  commercial:   { label: "Commercial",   filter: "(PropertyType eq 'Business' or PropertyType eq 'Commercial Sale')" },
+  land:         { label: "Land",         filter: "PropertyType eq 'Land'" },
+};
+
 const MAX_PAGE = 24;
 const CACHE_SECONDS = 300;
 
@@ -114,6 +130,24 @@ export default {
           pageSize: q.top,
           total: data["@odata.count"] ?? null,
           results: (data.value || []).map((r) => clean(r, q.dataset)),
+        });
+      }
+
+      if (url.pathname === "/api/categories") {
+        const dataset = pickDataset(url.searchParams.get("dataset"));
+        if (!dataset) return json({ error: "Unknown dataset" }, 400);
+        const ids = Object.keys(CATEGORIES);
+        const counts = await Promise.all(
+          [null, ...ids].map((id) =>
+            bridge(env, ctx, buildCountUrl(dataset, id)).then((d) => d["@odata.count"] ?? 0)
+          )
+        );
+        return json({
+          dataset,
+          total: counts[0],
+          categories: ids
+            .map((id, i) => ({ id, label: CATEGORIES[id].label, count: counts[i + 1] }))
+            .filter((c) => c.count > 0),
         });
       }
 
@@ -175,8 +209,12 @@ export function parseSearch(params) {
   const sort = params.get("sort") || "newest";
   if (!SORTS[sort]) return { error: "Invalid sort" };
 
+  const category = params.get("category") || "";
+  if (category && !Object.hasOwn(CATEGORIES, category)) return { error: "Invalid category" };
+
   return {
     dataset,
+    category,
     minPrice: minPrice.value,
     maxPrice: maxPrice.value,
     beds: beds.value,
@@ -200,6 +238,7 @@ export function buildSearchUrl(q) {
   if (q.beds !== null) filters.push(`BedroomsTotal ge ${q.beds}`);
   if (q.baths !== null) filters.push(`BathroomsTotalInteger ge ${q.baths}`);
   if (q.city) filters.push(`City eq ${odataString(q.city)}`);
+  if (q.category) filters.push(CATEGORIES[q.category].filter);
 
   const u = new URL(`${BRIDGE_BASE}/${q.dataset}/Property`);
   u.searchParams.set("$select", PUBLIC_FIELDS.join(","));
@@ -207,6 +246,17 @@ export function buildSearchUrl(q) {
   u.searchParams.set("$orderby", SORTS[q.sort]);
   u.searchParams.set("$top", String(q.top));
   u.searchParams.set("$skip", String((q.page - 1) * q.top));
+  return u;
+}
+
+// Count-only query: one tiny record, we just read @odata.count.
+export function buildCountUrl(dataset, categoryId) {
+  const filters = ["StandardStatus eq 'Active'"];
+  if (categoryId) filters.push(CATEGORIES[categoryId].filter);
+  const u = new URL(`${BRIDGE_BASE}/${dataset}/Property`);
+  u.searchParams.set("$select", "ListingKey");
+  u.searchParams.set("$filter", filters.join(" and "));
+  u.searchParams.set("$top", "1");
   return u;
 }
 
